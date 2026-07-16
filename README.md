@@ -18,14 +18,16 @@ metadata, ignored dependencies, and generated output do not affect ordering.
 
 ## Install with Homebrew
 
-This repository includes a local Homebrew formula pinned to the `v0.1.0` tag:
+This repository is a local Homebrew tap. Its formula is pinned to the `v0.1.0`
+tag:
 
 ```sh
-brew install --formula /Users/caleb/Code/wtls/Formula/wtls.rb
+brew tap calebcauthon/wtls /Users/caleb/Code/wtls
+brew install wtls
 ```
 
-After the repository is published, the formula URL can be changed to the GitHub
-release tarball and installed from a tap.
+After the repository is published, the tap can be installed from its GitHub URL
+instead of the local path.
 
 ## Use
 
