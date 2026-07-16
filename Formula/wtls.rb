@@ -1,11 +1,10 @@
 class Wtls < Formula
   desc "List Git worktrees by their most recently modified project file"
   homepage "https://github.com/calebcauthon/wtls"
-  url "file:///Users/caleb/Code/wtls",
-      using:    :git,
-      tag:      "v0.1.0",
-      revision: "61f6958dc75b2f6ff87076834d3ad5d91c24aa84"
+  url "https://github.com/calebcauthon/wtls/archive/refs/tags/v0.1.0.tar.gz"
+  sha256 "aa89dfb001d690cc76f72c9db18df6a3361df1379fa163f5e62ade8d269ead4f"
   license "MIT"
+  head "https://github.com/calebcauthon/wtls.git", branch: "main"
 
   depends_on "fzf"
 

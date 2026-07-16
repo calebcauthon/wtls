@@ -18,16 +18,21 @@ metadata, ignored dependencies, and generated output do not affect ordering.
 
 ## Install with Homebrew
 
-This repository is a local Homebrew tap. Its formula is pinned to the `v0.1.0`
-tag:
+This repository is also a Homebrew tap. Because its GitHub repository is named
+`wtls` rather than `homebrew-wtls`, pass the repository URL when tapping it for
+the first time:
 
 ```sh
-brew tap calebcauthon/wtls /Users/caleb/Code/wtls
+brew tap calebcauthon/wtls https://github.com/calebcauthon/wtls
 brew install wtls
 ```
 
-After the repository is published, the tap can be installed from its GitHub URL
-instead of the local path.
+After that, Homebrew updates `wtls` with the usual commands:
+
+```sh
+brew update
+brew upgrade wtls
+```
 
 ## Use
 
