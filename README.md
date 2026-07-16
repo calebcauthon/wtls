@@ -4,6 +4,8 @@
 directories, it uses the newest modified project file in each worktree, so
 editing an existing file immediately moves that worktree up the list.
 
+![wtls terminal demo](assets/wtls-demo.gif)
+
 ## Quickstart
 
 Install once, then run `wtls` from any Git repository:
