@@ -16,9 +16,6 @@ brew install wtls
 # List this repository's worktrees, newest activity first
 cd ~/Code/your-project
 wtls
-
-# Jump to the newest worktree matching a branch name or path
-cd "$(wtls checkout)"
 ```
 
 ```text
@@ -28,6 +25,12 @@ main                       /Users/caleb/Code/app
 
 yesterday
 fix/receipt-email          /Users/caleb/Code/receipt-email
+```
+
+Jump to the newest worktree matching a branch name or path:
+
+```sh
+cd "$(wtls redesign)"
 ```
 
 Tracked files and untracked, non-ignored files count as project activity. Git
