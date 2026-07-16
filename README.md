@@ -4,6 +4,23 @@
 directories, it uses the newest modified project file in each worktree, so
 editing an existing file immediately moves that worktree up the list.
 
+## Quickstart
+
+Install once, then run `wtls` from any Git repository:
+
+```sh
+# Install
+brew tap calebcauthon/wtls https://github.com/calebcauthon/wtls
+brew install wtls
+
+# List this repository's worktrees, newest activity first
+cd ~/Code/your-project
+wtls
+
+# Jump to the newest worktree matching a branch name or path
+cd "$(wtls checkout)"
+```
+
 ```text
 today
 feature/checkout-redesign  /Users/caleb/Code/checkout-redesign
