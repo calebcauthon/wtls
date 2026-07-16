@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+
+set -uo pipefail
+
+readonly WTLS_VERSION="0.1.0"
+
+usage() {
+    cat <<'EOF'
+Usage: wtls [pattern]
+
+List Git worktrees ordered by their most recently modified project file.
+
+With a pattern, fuzzy-match branch names and paths and print only the selected
+worktree path to stdout. Status messages are written to stderr.
+
+Options:
+  -h, --help     Show this help
+  -v, --version  Show the version
+
+wtls considers tracked files and untracked, non-ignored files. Git metadata,
+ignored dependencies, and build output do not affect worktree ordering.
+EOF
+}
+
+fail() {
+    printf 'wtls: %s\n' "$*" >&2
+    exit 1
+}
+
+newest_file_mtime() {
+    local worktree="$1"
+
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        (
+            cd "$worktree" || exit 1
+            git ls-files --cached --others --exclude-standard -z |
+                xargs -0 stat -f '%m' -- 2>/dev/null |
+                awk '$1 > newest { newest = $1 } END { if (newest) print newest }'
+        )
+    else
+        (
+            cd "$worktree" || exit 1
+            git ls-files --cached --others --exclude-standard -z |
+                xargs -0 stat -c '%Y' -- 2>/dev/null |
+                awk '$1 > newest { newest = $1 } END { if (newest) print newest }'
+        )
+    fi
+}
+
+directory_mtime() {
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        stat -f '%m' -- "$1"
+    else
+        stat -c '%Y' -- "$1"
+    fi
+}
+
+date_from_epoch() {
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        date -r "$1" '+%Y-%m-%d'
+    else
+        date -d "@$1" '+%Y-%m-%d'
+    fi
+}
+
+yesterday() {
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        date -v-1d '+%Y-%m-%d'
+    else
+        date -d yesterday '+%Y-%m-%d'
+    fi
+}
+
+main() {
+    case "${1:-}" in
+        -h|--help)
+            usage
+            return 0
+            ;;
+        -v|--version)
+            printf 'wtls %s\n' "$WTLS_VERSION"
+            return 0
+            ;;
+    esac
+
+    command -v git >/dev/null 2>&1 || fail 'git is required'
+    git rev-parse --git-dir >/dev/null 2>&1 || fail 'not inside a Git repository'
+
+    local wt branch folder ts pattern match
+    local row_date previous_date='' heading
+    local today_date yesterday_date
+    local branch_width=0
+    local -a rows=()
+
+    today_date="$(date '+%Y-%m-%d')"
+    yesterday_date="$(yesterday)"
+
+    while IFS= read -r wt; do
+        [[ -d "$wt" ]] || continue
+
+        branch="$(git -C "$wt" symbolic-ref --quiet --short HEAD 2>/dev/null)" || branch='(detached)'
+        ts="$(newest_file_mtime "$wt")"
+        [[ -n "$ts" ]] || ts="$(directory_mtime "$wt")"
+        folder="$wt"
+        rows+=("$ts"$'\t'"$branch"$'\t'"$folder")
+
+        (( ${#branch} > branch_width )) && branch_width=${#branch}
+    done < <(git worktree list --porcelain | sed -n 's/^worktree //p')
+
+    (( ${#rows[@]} > 0 )) || fail 'this repository has no available worktrees'
+
+    if (( $# > 0 )); then
+        pattern="$*"
+        printf 'searching for "%s"\n' "$pattern" >&2
+
+        command -v fzf >/dev/null 2>&1 || fail 'fzf is required for search'
+
+        match="$(
+            printf '%s\n' "${rows[@]}" |
+                sort -rn |
+                fzf --filter="$pattern" --no-sort --delimiter=$'\t' --nth=2,3 |
+                head -n 1
+        )"
+
+        if [[ -z "$match" ]]; then
+            printf 'wtls: found no worktree matching "%s"\n' "$pattern" >&2
+            return 1
+        fi
+
+        IFS=$'\t' read -r ts branch folder <<< "$match"
+        printf 'found "%s" at %s\n' "$branch" "$folder" >&2
+        printf '%s\n' "$folder"
+        return 0
+    fi
+
+    printf '%s\n' "${rows[@]}" | sort -rn |
+        while IFS=$'\t' read -r ts branch folder; do
+            row_date="$(date_from_epoch "$ts")"
+
+            if [[ "$row_date" != "$previous_date" ]]; then
+                [[ -n "$previous_date" ]] && printf '\n'
+
+                if [[ "$row_date" == "$today_date" ]]; then
+                    heading='today'
+                elif [[ "$row_date" == "$yesterday_date" ]]; then
+                    heading='yesterday'
+                else
+                    heading="$row_date"
+                fi
+
+                if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+                    printf '\033[32m%s\033[0m\n' "$heading"
+                else
+                    printf '%s\n' "$heading"
+                fi
+                previous_date="$row_date"
+            fi
+
+            printf '%-*s  %s\n' "$branch_width" "$branch" "$folder"
+        done
+}
+
+main "$@"
